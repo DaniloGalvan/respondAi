@@ -81,7 +81,7 @@ export function QuizScreen({ questions, onFinish, onCorrectAnswer }: QuizScreenP
       return `${base} border-primary bg-primary/10 text-foreground ring-2 ring-primary/20`
     }
 
-    return `${base} border-border bg-card text-foreground hover:border-primary/50 hover:bg-primary/5 cursor-pointer`
+    return `${base} border-border bg-card text-foreground hover:border-primary/50 hover:bg-primary/5 cursor-pointer active:scale-95`
   }
 
   return (
@@ -167,7 +167,7 @@ export function QuizScreen({ questions, onFinish, onCorrectAnswer }: QuizScreenP
             <Button
               onClick={handleAnswer}
               disabled={selectedIndex === null}
-              className="h-14 rounded-xl text-base font-semibold transition-all focus-visible:ring-4 focus-visible:ring-primary/40"
+              className="h-14 rounded-xl text-base font-semibold transition-all focus-visible:ring-4 focus-visible:ring-primary/40 cursor-pointer disabled:cursor-not-allowed"
               aria-label="Confirmar resposta selecionada"
             >
               Responder
@@ -179,7 +179,7 @@ export function QuizScreen({ questions, onFinish, onCorrectAnswer }: QuizScreenP
       {/* Feedback Bottom Sheet - Fixed Overlay */}
       {answerState === "answered" && (
         <div
-          className="absolute bottom-0 left-0 right-0 z-20 animate-in slide-in-from-bottom duration-300 border-t-2 border-border"
+          className="fixed bottom-0 left-0 right-0 z-50 animate-in slide-in-from-bottom duration-300 border-t-2 border-border"
           style={{ animationFillMode: "both" }}
         >
           <div
@@ -188,7 +188,7 @@ export function QuizScreen({ questions, onFinish, onCorrectAnswer }: QuizScreenP
             role="alert"
             aria-live="assertive"
             className={`mx-auto max-w-2xl px-4 py-5 focus:outline-none ${
-              isCorrect ? "bg-success/5" : "bg-destructive/5"
+              isCorrect ? "bg-white dark:bg-slate-950" : "bg-white dark:bg-slate-950"
             }`}
           >
             <div className="flex flex-col gap-3">
@@ -220,7 +220,7 @@ export function QuizScreen({ questions, onFinish, onCorrectAnswer }: QuizScreenP
               <Button
                 ref={nextBtnRef}
                 onClick={handleAdvance}
-                className="mt-1 h-12 rounded-xl text-base font-semibold transition-all focus-visible:ring-4 focus-visible:ring-primary/40"
+                className="mt-1 h-12 rounded-xl text-base font-semibold transition-all focus-visible:ring-4 focus-visible:ring-primary/40 cursor-pointer"
                 aria-label={
                   currentIndex + 1 >= questions.length
                     ? "Ver resultado final do quiz"

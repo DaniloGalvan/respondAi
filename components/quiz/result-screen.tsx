@@ -124,7 +124,7 @@ export function ResultScreen({ score, total, onRestart }: ResultScreenProps) {
         <Button
           onClick={onRestart}
           variant="outline"
-          className="h-12 w-full rounded-xl text-base font-semibold transition-all focus-visible:ring-4 focus-visible:ring-primary/40"
+          className="h-12 w-full rounded-xl text-base font-semibold transition-all focus-visible:ring-4 focus-visible:ring-primary/40 cursor-pointer"
           aria-label="Jogar novamente, iniciar um novo quiz"
         >
           <RotateCcw className="mr-2 h-5 w-5" aria-hidden="true" />

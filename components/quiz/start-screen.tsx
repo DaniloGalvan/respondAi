@@ -88,7 +88,7 @@ export function StartScreen({ onStart }: StartScreenProps) {
           <Button
             type="submit"
             disabled={!canStart}
-            className="mt-2 h-14 rounded-xl text-base font-semibold transition-all focus-visible:ring-4 focus-visible:ring-primary/40"
+            className="mt-2 h-14 rounded-xl text-base font-semibold transition-all focus-visible:ring-4 focus-visible:ring-primary/40 cursor-pointer disabled:cursor-not-allowed"
             aria-label="Iniciar o quiz"
           >
             Iniciar Quiz
