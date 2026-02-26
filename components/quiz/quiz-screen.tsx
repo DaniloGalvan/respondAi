@@ -85,7 +85,7 @@ export function QuizScreen({ questions, onFinish, onCorrectAnswer }: QuizScreenP
   }
 
   return (
-    <div className="flex min-h-svh flex-col bg-background">
+    <div className="relative flex h-[100dvh] flex-col overflow-hidden bg-background">
       {/* Progress Header */}
       <header className="sticky top-0 z-10 border-b border-border bg-background/95 px-4 py-3 backdrop-blur-sm">
         <div className="mx-auto flex max-w-2xl flex-col gap-2">
@@ -109,7 +109,7 @@ export function QuizScreen({ questions, onFinish, onCorrectAnswer }: QuizScreenP
       </header>
 
       {/* Question Content */}
-      <main className="flex flex-1 flex-col px-4 py-6">
+      <main className={`flex flex-1 flex-col overflow-y-auto px-4 py-6 ${answerState === "answered" ? "pb-0" : ""}`}>
         <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6">
           {/* Question Statement */}
           <div className="flex flex-col gap-2">
@@ -176,10 +176,10 @@ export function QuizScreen({ questions, onFinish, onCorrectAnswer }: QuizScreenP
         </div>
       </main>
 
-      {/* Feedback Bottom Sheet */}
+      {/* Feedback Bottom Sheet - Fixed Overlay */}
       {answerState === "answered" && (
         <div
-          className="animate-in slide-in-from-bottom duration-300 border-t-2 border-border"
+          className="absolute bottom-0 left-0 right-0 z-20 animate-in slide-in-from-bottom duration-300 border-t-2 border-border"
           style={{ animationFillMode: "both" }}
         >
           <div
