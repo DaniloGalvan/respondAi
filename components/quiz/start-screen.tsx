@@ -1,24 +1,37 @@
 "use client"
 
 import { useState } from "react"
-import { BookOpen, ArrowRight } from "lucide-react"
+import { BookOpen, ArrowRight, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
 interface StartScreenProps {
-  onStart: (quizCode: string, studentName: string) => void
+  onStart: (quizCode: string, studentName: string) => Promise<void>
 }
 
 export function StartScreen({ onStart }: StartScreenProps) {
   const [quizCode, setQuizCode] = useState("")
   const [studentName, setStudentName] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [showValidationError, setShowValidationError] = useState(false)
 
-  const canStart = quizCode.trim().length > 0
+  const canStart = quizCode.trim().length > 0 && studentName.trim().length >= 5 && !isLoading
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (canStart) {
-      onStart(quizCode.trim(), studentName.trim())
+    
+    // Validar campos
+    if (quizCode.trim().length === 0 || studentName.trim().length < 5) {
+      setShowValidationError(true)
+      return
+    }
+    
+    setShowValidationError(false)
+    setIsLoading(true)
+    try {
+      await onStart(quizCode.trim(), studentName.trim())
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -56,10 +69,11 @@ export function StartScreen({ onStart }: StartScreenProps) {
               placeholder="Ex: #HIST05"
               value={quizCode}
               onChange={(e) => setQuizCode(e.target.value)}
+              disabled={isLoading}
               aria-label="Codigo do quiz. Insira o codigo fornecido pelo professor"
               aria-required="true"
               autoComplete="off"
-              className="h-14 rounded-xl border-2 border-border bg-background px-4 text-lg font-medium placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:ring-primary/30"
+              className="h-14 rounded-xl border-2 border-border bg-background px-4 text-lg font-medium placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:ring-primary/30 disabled:opacity-50"
             />
           </div>
 
@@ -69,9 +83,7 @@ export function StartScreen({ onStart }: StartScreenProps) {
               className="text-sm font-semibold text-foreground"
             >
               Nome ou Matricula
-              <span className="ml-1 text-xs font-normal text-muted-foreground">
-                (opcional)
-              </span>
+              <span className="ml-1 text-red-500">*</span>
             </label>
             <Input
               id="student-name"
@@ -79,9 +91,11 @@ export function StartScreen({ onStart }: StartScreenProps) {
               placeholder="Seu nome ou numero de matricula"
               value={studentName}
               onChange={(e) => setStudentName(e.target.value)}
-              aria-label="Nome ou matricula do aluno. Campo opcional"
+              disabled={isLoading}
+              aria-label="Nome ou matricula do aluno. Campo obrigatorio"
               autoComplete="name"
-              className="h-12 rounded-xl border-2 border-border bg-background px-4 text-base placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:ring-primary/30"
+              required
+              className="h-12 rounded-xl border-2 border-border bg-background px-4 text-base placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:ring-primary/30 disabled:opacity-50"
             />
           </div>
 
@@ -89,12 +103,29 @@ export function StartScreen({ onStart }: StartScreenProps) {
             type="submit"
             disabled={!canStart}
             className="mt-2 h-14 rounded-xl text-base font-semibold transition-all focus-visible:ring-4 focus-visible:ring-primary/40 cursor-pointer disabled:cursor-not-allowed"
-            aria-label="Iniciar o quiz"
+            aria-label={isLoading ? "Carregando quiz" : "Iniciar o quiz"}
           >
-            Iniciar Quiz
-            <ArrowRight className="ml-2 h-5 w-5" aria-hidden="true" />
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
+                Carregando...
+              </>
+            ) : (
+              <>
+                Iniciar Quiz
+                <ArrowRight className="ml-2 h-5 w-5" aria-hidden="true" />
+              </>
+            )}
           </Button>
         </form>
+
+        {/* Mensagem de Validação */}
+        {showValidationError && (
+          <div className="w-full rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <p className="font-medium">Campos obrigatórios</p>
+            <p>Preencha o código do quiz e seu nome/matrícula (mínimo 5 caracteres) para continuar.</p>
+          </div>
+        )}
 
         <p className="text-center text-xs leading-relaxed text-muted-foreground">
           Ao iniciar, suas respostas serao registradas automaticamente.

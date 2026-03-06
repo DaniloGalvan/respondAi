@@ -2,7 +2,7 @@ export interface Question {
   id: number
   statement: string
   alternatives: string[]
-  correctIndex: number
+  correctIndex: number // Pode ser -1 se não encontrar match
   explanation: string
 }
 

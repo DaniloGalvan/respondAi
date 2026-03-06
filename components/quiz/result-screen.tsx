@@ -1,8 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Trophy, Target, RotateCcw, CloudUpload, CheckCircle2 } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { Trophy, Target, RotateCcw, CloudUpload, CheckCircle2, Wifi, WifiOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { SyncService } from "@/lib/sync-service"
+import { ConfettiService } from "@/lib/confetti-service"
 
 interface ResultScreenProps {
   score: number
@@ -11,28 +13,73 @@ interface ResultScreenProps {
 }
 
 export function ResultScreen({ score, total, onRestart }: ResultScreenProps) {
-  const [syncState, setSyncState] = useState<"syncing" | "done">("syncing")
-  const percentage = Math.round((score / total) * 100)
+  const [syncState, setSyncState] = useState<"syncing" | "done" | "offline">("syncing")
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
+  const hasTriggeredFinalConfetti = useRef(false) // Evita disparo duplicado
+  const percentage = total > 0 ? Math.round((score / total) * 100) : 0
 
-  // Simulate offline sync
+  // Confete final único (apenas uma vez ao montar)
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setSyncState("done")
-    }, 3000)
-    return () => clearTimeout(timer)
+    if (!hasTriggeredFinalConfetti.current && percentage >= 70) {
+      console.log('ResultScreen: Disparando confete final único!')
+      ConfettiService.triggerCompletion() // Método correto
+      hasTriggeredFinalConfetti.current = true
+    }
+  }, [percentage])
+
+  // Monitorar status de conexão
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
   }, [])
 
+  // Tentar sincronizar quando online
+  useEffect(() => {
+    if (isOnline) {
+      const syncData = async () => {
+        try {
+          setSyncState("syncing")
+          await SyncService.forceSync()
+          setSyncState("done")
+        } catch (error) {
+          console.error('Erro na sincronização:', error)
+          setSyncState("offline")
+        }
+      }
+
+      // Pequeno delay para mostrar o estado de sincronização
+      const timer = setTimeout(syncData, 1000)
+      return () => clearTimeout(timer)
+    } else {
+      setSyncState("offline")
+    }
+  }, [isOnline])
+
   const getPerformanceMessage = () => {
-    if (percentage >= 90) return "Excelente! Voce arrasou!"
-    if (percentage >= 70) return "Muito bem! Otimo desempenho!"
+    if (percentage >= 90) return "Excelente! Você arrasou!"
+    if (percentage >= 70) return "Muito bem! Ótimo desempenho!"
     if (percentage >= 50) return "Bom trabalho! Continue estudando!"
-    return "Nao desanime! Pratique mais!"
+    return "Não desanime! Pratique mais!"
   }
 
   const getPerformanceColor = () => {
     if (percentage >= 70) return "text-success"
     if (percentage >= 50) return "text-accent-foreground"
     return "text-destructive"
+  }
+
+  const getSyncMessage = () => {
+    if (syncState === "syncing") return "Sincronizando resultados..."
+    if (syncState === "done") return "Resultados sincronizados com sucesso"
+    return "Resultados salvos offline. Sincronização automática quando conectar."
   }
 
   return (
@@ -114,7 +161,7 @@ export function ResultScreen({ score, total, onRestart }: ResultScreenProps) {
                 aria-valuenow={percentage}
                 aria-valuemin={0}
                 aria-valuemax={100}
-                aria-label={`Voce acertou ${percentage} por cento das questoes`}
+                aria-label={`Você acertou ${percentage} por cento das questões`}
               />
             </div>
           </div>
@@ -134,15 +181,35 @@ export function ResultScreen({ score, total, onRestart }: ResultScreenProps) {
         {/* Sync Status */}
         <footer className="flex items-center gap-2 text-xs text-muted-foreground">
           <div aria-live="polite" aria-atomic="true" className="flex items-center gap-2">
-            {syncState === "syncing" ? (
+            {/* Connection Status */}
+            <div className="flex items-center gap-1">
+              {isOnline ? (
+                <Wifi className="h-4 w-4 text-success" aria-hidden="true" />
+              ) : (
+                <WifiOff className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              )}
+              <span>{isOnline ? "Online" : "Offline"}</span>
+            </div>
+
+            <div className="h-3 w-px bg-border" aria-hidden="true" />
+
+            {/* Sync Status */}
+            {syncState === "syncing" && (
               <>
                 <CloudUpload className="h-4 w-4 animate-pulse" aria-hidden="true" />
-                <span>Sincronizando resultados offline...</span>
+                <span>{getSyncMessage()}</span>
               </>
-            ) : (
+            )}
+            {syncState === "done" && (
               <>
                 <CheckCircle2 className="h-4 w-4 text-success" aria-hidden="true" />
-                <span>Resultados sincronizados com sucesso</span>
+                <span>{getSyncMessage()}</span>
+              </>
+            )}
+            {syncState === "offline" && (
+              <>
+                <CloudUpload className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                <span>{getSyncMessage()}</span>
               </>
             )}
           </div>

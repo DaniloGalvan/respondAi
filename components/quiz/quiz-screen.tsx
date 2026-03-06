@@ -8,14 +8,21 @@ import type { Question } from "@/lib/quiz-data"
 
 interface QuizScreenProps {
   questions: Question[]
+  currentQuestion: number
   onFinish: (score: number, total: number) => void
-  onCorrectAnswer: () => void
+  onSaveAnswer?: (questionId: string, answerText: string, isCorrect: boolean) => void
+  onNextQuestion?: () => void
 }
 
 type AnswerState = "idle" | "selected" | "answered"
 
-export function QuizScreen({ questions, onFinish, onCorrectAnswer }: QuizScreenProps) {
-  const [currentIndex, setCurrentIndex] = useState(0)
+export function QuizScreen({ 
+  questions, 
+  currentQuestion,
+  onFinish, 
+  onSaveAnswer,
+  onNextQuestion
+}: QuizScreenProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [answerState, setAnswerState] = useState<AnswerState>("idle")
   const [isCorrect, setIsCorrect] = useState(false)
@@ -23,6 +30,8 @@ export function QuizScreen({ questions, onFinish, onCorrectAnswer }: QuizScreenP
   const feedbackRef = useRef<HTMLDivElement>(null)
   const nextBtnRef = useRef<HTMLButtonElement>(null)
 
+  // Ajustar para base 0 (array index)
+  const currentIndex = currentQuestion - 1
   const question = questions[currentIndex]
   const progressPercent = ((currentIndex + 1) / questions.length) * 100
 
@@ -33,26 +42,52 @@ export function QuizScreen({ questions, onFinish, onCorrectAnswer }: QuizScreenP
   }, [answerState])
 
   const handleAnswer = useCallback(() => {
-    if (selectedIndex === null) return
-    const correct = selectedIndex === question.correctIndex
-    setIsCorrect(correct)
-    if (correct) {
+    if (selectedIndex === null || !onSaveAnswer) return
+    
+    const selectedAlternative = question.alternatives[selectedIndex]
+    
+    console.log('[QUIZ DEBUG] Resposta selecionada:', {
+      selectedIndex,
+      selectedAlternative,
+      correctIndex: question.correctIndex,
+      correctAlternative: question.alternatives[question.correctIndex]
+    })
+    
+    // Verificar se o correctIndex é válido
+    if (question.correctIndex === -1) {
+      console.error('[QUIZ ERROR] correctIndex é -1. Não é possível avaliar resposta.')
+      return
+    }
+    
+    // Avaliação simples e direta: selectedIndex === correctIndex
+    const isCorrect = selectedIndex === question.correctIndex
+    
+    console.log('[QUIZ DEBUG] Resultado da avaliação:', {
+      selectedIndex,
+      correctIndex: question.correctIndex,
+      isCorrect
+    })
+    
+    // Chamada síncrona exata conforme especificação
+    onSaveAnswer(question.id.toString(), selectedAlternative, isCorrect)
+    
+    setIsCorrect(isCorrect)
+    if (isCorrect) {
       setScore((prev) => prev + 1)
-      onCorrectAnswer()
     }
     setAnswerState("answered")
-  }, [selectedIndex, question.correctIndex, onCorrectAnswer])
+  }, [selectedIndex, question, onSaveAnswer])
 
   const handleAdvance = useCallback(() => {
     if (currentIndex + 1 >= questions.length) {
-      onFinish(score, questions.length)
+      onFinish(score + (isCorrect ? 1 : 0), questions.length)
     } else {
-      setCurrentIndex((prev) => prev + 1)
+      onNextQuestion?.()
       setSelectedIndex(null)
       setAnswerState("idle")
       setIsCorrect(false)
     }
-  }, [currentIndex, questions.length, score, onFinish])
+  }, [currentIndex, questions.length, score, isCorrect, onFinish, onNextQuestion])
 
   // Focus management: move focus to feedback card when answer is shown
   useEffect(() => {
@@ -68,20 +103,48 @@ export function QuizScreen({ questions, onFinish, onCorrectAnswer }: QuizScreenP
       "flex w-full items-start gap-3 rounded-xl border-2 p-4 text-left text-base leading-relaxed transition-all focus-visible:ring-4 focus-visible:ring-primary/40 focus-visible:outline-none"
 
     if (answerState === "answered") {
+      // REGRA ESTRITA: Verde apenas para index === correctIndex
       if (index === question.correctIndex) {
         return `${base} border-success bg-success/10 text-foreground`
       }
+      // REGRA ESTRITA: Vermelho apenas para selectedIndex errado
       if (index === selectedIndex && index !== question.correctIndex) {
         return `${base} border-destructive bg-destructive/10 text-foreground`
       }
+      // Outras alternativas não clicadas ficam neutras/cinza
       return `${base} border-border bg-muted/50 text-muted-foreground opacity-60`
     }
 
+    // Estado antes de responder: alternativa selecionada fica destacada
     if (index === selectedIndex) {
       return `${base} border-primary bg-primary/10 text-foreground ring-2 ring-primary/20`
     }
 
+    // Alternativas não selecionadas (estado normal)
     return `${base} border-border bg-card text-foreground hover:border-primary/50 hover:bg-primary/5 cursor-pointer active:scale-95`
+  }
+
+  if (!question || question.correctIndex === -1) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center p-6 bg-red-50 rounded-lg max-w-md">
+          <div className="mb-4">
+            <div className="mx-auto h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
+              <XCircle className="h-6 w-6 text-red-600" />
+            </div>
+          </div>
+          <h2 className="text-lg font-semibold text-red-900 mb-2">Erro na Questão</h2>
+          <p className="text-red-700 mb-4 text-sm leading-relaxed">
+            Não foi possível identificar a alternativa correta para esta questão.
+          </p>
+          <div className="text-xs text-red-600 bg-red-100 p-2 rounded">
+            <p><strong>Debug Info:</strong></p>
+            <p>ID: {question?.id}</p>
+            <p>CorrectIndex: {question?.correctIndex}</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -144,14 +207,14 @@ export function QuizScreen({ questions, onFinish, onCorrectAnswer }: QuizScreenP
                 <span
                   className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold ${
                     answerState === "answered" && index === question.correctIndex
-                      ? "bg-success text-success-foreground"
+                      ? "bg-success text-success-foreground" // Verde para resposta correta
                       : answerState === "answered" &&
                           index === selectedIndex &&
                           index !== question.correctIndex
-                        ? "bg-destructive text-destructive-foreground"
+                        ? "bg-destructive text-destructive-foreground" // Vermelho para resposta errada
                         : index === selectedIndex
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground"
+                          ? "bg-primary text-primary-foreground" // Azul para selecionada
+                          : "bg-muted text-muted-foreground" // Cinza para não selecionadas
                   }`}
                   aria-hidden="true"
                 >
