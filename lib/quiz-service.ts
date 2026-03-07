@@ -228,6 +228,102 @@ export class QuizService {
     }
   }
 
+  // Salvar resposta do aluno diretamente no banco
+  static async saveStudentAnswer(
+    sessionId: string, 
+    questionId: string, 
+    answerText: string, 
+    isCorrect: boolean
+  ): Promise<boolean> {
+    try {
+      console.log(`Salvando resposta para sessão ${sessionId}, questão ${questionId}`)
+      
+      const answerData = {
+        id_sessao: sessionId,
+        id_questao: questionId,
+        resposta_aluno: answerText,
+        correta: isCorrect,
+        respondido_em: new Date().toISOString()
+      }
+      
+      const { error } = await supabase
+        .from('respostas_alunos')
+        .insert(answerData)
+
+      if (error) {
+        console.error('Erro ao salvar resposta:', {
+          error: error,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        })
+        return false
+      }
+
+      console.log('Resposta salva com sucesso no banco!')
+      return true
+    } catch (error) {
+      console.error('Erro completo em saveStudentAnswer:', error)
+      return false
+    }
+  }
+
+  // Verificar e sincronizar respostas locais não sincronizadas
+  static async syncLocalAnswers(sessionId: string, localAnswers: any[]): Promise<boolean> {
+    try {
+      if (localAnswers.length === 0) {
+        console.log('Nenhuma resposta local para sincronizar')
+        return true
+      }
+
+      console.log(`Sincronizando ${localAnswers.length} respostas locais...`)
+
+      // Verificar quais respostas já existem no banco
+      const existingAnswers = await this.getSessionAnswers(sessionId)
+      const existingAnswerKeys = new Set(
+        existingAnswers.map(a => `${a.id_questao}_${a.respondido_em}`)
+      )
+
+      // Filtrar apenas respostas que ainda não existem no banco
+      const newAnswers = localAnswers.filter(localAnswer => {
+        const answerKey = `${localAnswer.id_questao}_${localAnswer.respondido_em}`
+        return !existingAnswerKeys.has(answerKey)
+      })
+
+      if (newAnswers.length === 0) {
+        console.log('Todas as respostas locais já estão sincronizadas')
+        return true
+      }
+
+      console.log(`Encontradas ${newAnswers.length} respostas novas para sincronizar`)
+
+      // Preparar dados para inserção
+      const answersToInsert = newAnswers.map(answer => ({
+        id_sessao: sessionId,
+        id_questao: answer.id_questao,
+        resposta_aluno: answer.resposta_aluno,
+        correta: answer.correta,
+        respondido_em: answer.respondido_em
+      }))
+
+      // Inserir em lote
+      const { error } = await supabase
+        .from('respostas_alunos')
+        .insert(answersToInsert)
+
+      if (error) {
+        console.error('Erro ao sincronizar respostas locais:', error)
+        return false
+      }
+
+      console.log(`${answersToInsert.length} respostas sincronizadas com sucesso!`)
+      return true
+    } catch (error) {
+      console.error('Erro completo em syncLocalAnswers:', error)
+      return false
+    }
+  }
+
   // Buscar respostas existentes de uma sessão
   static async getSessionAnswers(idSessao: string): Promise<any[]> {
     try {

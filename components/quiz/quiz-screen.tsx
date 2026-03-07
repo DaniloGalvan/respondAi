@@ -10,7 +10,7 @@ interface QuizScreenProps {
   questions: Question[]
   currentQuestion: number
   onFinish: (score: number, total: number) => void
-  onSaveAnswer?: (questionId: string, answerText: string, isCorrect: boolean) => void
+  onSaveAnswer?: (questionId: string, answerText: string, isCorrect: boolean) => Promise<void>
   onNextQuestion?: () => void
 }
 
@@ -41,7 +41,7 @@ export function QuizScreen({
     setAnswerState("selected")
   }, [answerState])
 
-  const handleAnswer = useCallback(() => {
+  const handleAnswer = useCallback(async () => {
     if (selectedIndex === null || !onSaveAnswer) return
     
     const selectedAlternative = question.alternatives[selectedIndex]
@@ -68,8 +68,14 @@ export function QuizScreen({
       isCorrect
     })
     
-    // Chamada síncrona exata conforme especificação
-    onSaveAnswer(question.id.toString(), selectedAlternative, isCorrect)
+    // Chamada assíncrona para salvar no banco
+    try {
+      await onSaveAnswer(question.id.toString(), selectedAlternative, isCorrect)
+      console.log('[QUIZ DEBUG] Resposta salva com sucesso')
+    } catch (error) {
+      console.error('[QUIZ ERROR] Erro ao salvar resposta:', error)
+      // Mesmo com erro, continua o fluxo para não bloquear o usuário
+    }
     
     setIsCorrect(isCorrect)
     if (isCorrect) {
