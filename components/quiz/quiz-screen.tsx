@@ -70,7 +70,7 @@ export function QuizScreen({
     
     // Chamada assíncrona para salvar no banco
     try {
-      await onSaveAnswer(question.id.toString(), selectedAlternative, isCorrect)
+      await onSaveAnswer(question.id, selectedAlternative, isCorrect)
       console.log('[QUIZ DEBUG] Resposta salva com sucesso')
     } catch (error) {
       console.error('[QUIZ ERROR] Erro ao salvar resposta:', error)

@@ -30,7 +30,7 @@ export function adaptQuizDataToQuestions(quizData: QuizData): Question[] {
     console.log('[MATCH DEBUG] Alternativas:', alternatives);
 
     return {
-      id: index + 1,
+      id: questao.id, // UUID real da questão do Supabase
       statement: questao.enunciado,
       alternatives,
       correctIndex: foundIndex, // Retorna -1 se der erro, NUNCA força para 0

@@ -1,5 +1,5 @@
 export interface Question {
-  id: number
+  id: string // UUID da questão do Supabase
   statement: string
   alternatives: string[]
   correctIndex: number // Pode ser -1 se não encontrar match
@@ -8,7 +8,7 @@ export interface Question {
 
 export const MOCK_QUIZ: Question[] = [
   {
-    id: 1,
+    id: "1",
     statement: "Qual foi o principal motivo que levou Portugal a iniciar as Grandes Navegacoes no seculo XV?",
     alternatives: [
       "A busca por novas rotas comerciais para as Indias",
@@ -21,7 +21,7 @@ export const MOCK_QUIZ: Question[] = [
       "Portugal buscava novas rotas comerciais para as Indias, pois o comercio de especiarias era extremamente lucrativo e os caminhos terrestres estavam dominados por intermediarios.",
   },
   {
-    id: 2,
+    id: "2",
     statement: "Qual e a formula para calcular a area de um triangulo?",
     alternatives: [
       "A = lado x lado",
@@ -34,7 +34,7 @@ export const MOCK_QUIZ: Question[] = [
       "A area de um triangulo e calculada multiplicando a base pela altura e dividindo o resultado por 2: A = (b x h) / 2.",
   },
   {
-    id: 3,
+    id: "3",
     statement: "Qual e o maior planeta do Sistema Solar?",
     alternatives: ["Saturno", "Terra", "Jupiter", "Netuno"],
     correctIndex: 2,
@@ -42,7 +42,7 @@ export const MOCK_QUIZ: Question[] = [
       "Jupiter e o maior planeta do Sistema Solar, com um diametro de aproximadamente 139.820 km, sendo mais de 11 vezes maior que a Terra.",
   },
   {
-    id: 4,
+    id: "4",
     statement: "Em que ano foi proclamada a Republica do Brasil?",
     alternatives: ["1822", "1889", "1500", "1930"],
     correctIndex: 1,
@@ -50,7 +50,7 @@ export const MOCK_QUIZ: Question[] = [
       "A Republica do Brasil foi proclamada em 15 de novembro de 1889, pelo Marechal Deodoro da Fonseca, encerrando o periodo do Imperio.",
   },
   {
-    id: 5,
+    id: "5",
     statement: "Qual e a funcao das mitocondrias nas celulas?",
     alternatives: [
       "Armazenar informacao genetica",
@@ -63,7 +63,7 @@ export const MOCK_QUIZ: Question[] = [
       "As mitocondrias sao responsaveis pela respiracao celular, processo que converte glicose e oxigenio em ATP (energia) para as funcoes da celula.",
   },
   {
-    id: 6,
+    id: "6",
     statement: "Qual bioma brasileiro e considerado o mais biodiverso do planeta?",
     alternatives: ["Cerrado", "Caatinga", "Amazonia", "Mata Atlantica"],
     correctIndex: 2,
@@ -71,7 +71,7 @@ export const MOCK_QUIZ: Question[] = [
       "A Floresta Amazonica e o bioma mais biodiverso do planeta, abrigando cerca de 10% de todas as especies conhecidas no mundo.",
   },
   {
-    id: 7,
+    id: "7",
     statement: "Quem escreveu a obra 'Dom Casmurro'?",
     alternatives: [
       "Jose de Alencar",
@@ -84,7 +84,7 @@ export const MOCK_QUIZ: Question[] = [
       "Machado de Assis escreveu 'Dom Casmurro', publicado em 1899, uma das obras mais importantes da literatura brasileira.",
   },
   {
-    id: 8,
+    id: "8",
     statement: "Qual e o resultado da expressao 3^2 + 4^2?",
     alternatives: ["7", "25", "49", "12"],
     correctIndex: 1,
@@ -92,7 +92,7 @@ export const MOCK_QUIZ: Question[] = [
       "3 ao quadrado e 9, e 4 ao quadrado e 16. A soma 9 + 16 = 25. Esse e tambem um exemplo do Teorema de Pitagoras (3, 4, 5).",
   },
   {
-    id: 9,
+    id: "9",
     statement: "Qual processo e responsavel pela transformacao de agua liquida em vapor?",
     alternatives: ["Condensacao", "Solidificacao", "Evaporacao", "Fusao"],
     correctIndex: 2,
@@ -100,7 +100,7 @@ export const MOCK_QUIZ: Question[] = [
       "A evaporacao e o processo no qual a agua no estado liquido se transforma em vapor d'agua (estado gasoso) ao receber calor.",
   },
   {
-    id: 10,
+    id: "10",
     statement: "Qual era a principal atividade economica no Brasil Colonial durante o seculo XVII?",
     alternatives: [
       "Mineracao de ouro",
