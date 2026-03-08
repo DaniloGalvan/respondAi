@@ -228,7 +228,7 @@ export class QuizService {
     }
   }
 
-  // Salvar resposta do aluno diretamente no banco
+  // Salvar resposta do aluno diretamente no banco (com UPSERT para evitar duplicatas)
   static async saveStudentAnswer(
     sessionId: string, 
     questionId: string, 
@@ -248,7 +248,9 @@ export class QuizService {
       
       const { error } = await supabase
         .from('respostas_alunos')
-        .insert(answerData)
+        .upsert(answerData, {
+          onConflict: 'id_sessao,id_questao' // Constraint UNIQUE do banco
+        })
 
       if (error) {
         console.error('Erro ao salvar resposta:', {
@@ -260,7 +262,7 @@ export class QuizService {
         return false
       }
 
-      console.log('Resposta salva com sucesso no banco!')
+      console.log('Resposta salva/atualizada com sucesso no banco!')
       return true
     } catch (error) {
       console.error('Erro completo em saveStudentAnswer:', error)
@@ -268,7 +270,7 @@ export class QuizService {
     }
   }
 
-  // Verificar e sincronizar respostas locais não sincronizadas
+  // Verificar e sincronizar respostas locais não sincronizadas (com UPSERT para evitar duplicatas)
   static async syncLocalAnswers(sessionId: string, localAnswers: any[]): Promise<boolean> {
     try {
       if (localAnswers.length === 0) {
@@ -278,27 +280,8 @@ export class QuizService {
 
       console.log(`Sincronizando ${localAnswers.length} respostas locais...`)
 
-      // Verificar quais respostas já existem no banco
-      const existingAnswers = await this.getSessionAnswers(sessionId)
-      const existingAnswerKeys = new Set(
-        existingAnswers.map(a => `${a.id_questao}_${a.respondido_em}`)
-      )
-
-      // Filtrar apenas respostas que ainda não existem no banco
-      const newAnswers = localAnswers.filter(localAnswer => {
-        const answerKey = `${localAnswer.id_questao}_${localAnswer.respondido_em}`
-        return !existingAnswerKeys.has(answerKey)
-      })
-
-      if (newAnswers.length === 0) {
-        console.log('Todas as respostas locais já estão sincronizadas')
-        return true
-      }
-
-      console.log(`Encontradas ${newAnswers.length} respostas novas para sincronizar`)
-
-      // Preparar dados para inserção
-      const answersToInsert = newAnswers.map(answer => ({
+      // Preparar dados para UPSERT (sobrescreve duplicatas)
+      const answersToUpsert = localAnswers.map(answer => ({
         id_sessao: sessionId,
         id_questao: answer.id_questao,
         resposta_aluno: answer.resposta_aluno,
@@ -306,17 +289,19 @@ export class QuizService {
         respondido_em: answer.respondido_em
       }))
 
-      // Inserir em lote
+      // UPSERT em lote para sobrescrever duplicatas
       const { error } = await supabase
         .from('respostas_alunos')
-        .insert(answersToInsert)
+        .upsert(answersToUpsert, {
+          onConflict: 'id_sessao,id_questao' // Constraint UNIQUE do banco
+        })
 
       if (error) {
         console.error('Erro ao sincronizar respostas locais:', error)
         return false
       }
 
-      console.log(`${answersToInsert.length} respostas sincronizadas com sucesso!`)
+      console.log(`${answersToUpsert.length} respostas sincronizadas/atualizadas com sucesso!`)
       return true
     } catch (error) {
       console.error('Erro completo em syncLocalAnswers:', error)

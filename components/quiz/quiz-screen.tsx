@@ -36,7 +36,9 @@ export function QuizScreen({
   const progressPercent = ((currentIndex + 1) / questions.length) * 100
 
   const handleSelect = useCallback((index: number) => {
-    if (answerState !== "idle" && answerState !== "selected") return
+    // Bloquear cliques adicionais assim que uma alternativa for selecionada
+    if (answerState !== "idle") return
+    
     setSelectedIndex(index)
     setAnswerState("selected")
   }, [answerState])
@@ -121,12 +123,17 @@ export function QuizScreen({
       return `${base} border-border bg-muted/50 text-muted-foreground opacity-60`
     }
 
-    // Estado antes de responder: alternativa selecionada fica destacada
-    if (index === selectedIndex) {
-      return `${base} border-primary bg-primary/10 text-foreground ring-2 ring-primary/20`
+    // Estado selecionado: alternativa selecionada fica destacada e não pode ser clicada novamente
+    if (index === selectedIndex && answerState === "selected") {
+      return `${base} border-primary bg-primary/10 text-foreground ring-2 ring-primary/20 cursor-not-allowed`
     }
 
-    // Alternativas não selecionadas (estado normal)
+    // Alternativas não selecionadas (estado normal) - bloqueadas após primeira seleção
+    if (answerState === "selected") {
+      return `${base} border-border bg-card text-foreground opacity-50 cursor-not-allowed`
+    }
+
+    // Estado idle (antes de qualquer seleção): permite clique
     return `${base} border-border bg-card text-foreground hover:border-primary/50 hover:bg-primary/5 cursor-pointer active:scale-95`
   }
 
@@ -231,12 +238,22 @@ export function QuizScreen({
             ))}
           </fieldset>
 
-          {/* Answer Button */}
-          {answerState !== "answered" && (
+          {/* Answer Button - desabilitado após seleção e após resposta */}
+          {answerState === "idle" && (
             <Button
               onClick={handleAnswer}
               disabled={selectedIndex === null}
               className="h-14 rounded-xl text-base font-semibold transition-all focus-visible:ring-4 focus-visible:ring-primary/40 cursor-pointer disabled:cursor-not-allowed"
+              aria-label="Confirmar resposta selecionada"
+            >
+              Responder
+            </Button>
+          )}
+          
+          {answerState === "selected" && (
+            <Button
+              onClick={handleAnswer}
+              className="h-14 rounded-xl text-base font-semibold transition-all focus-visible:ring-4 focus-visible:ring-primary/40 cursor-pointer"
               aria-label="Confirmar resposta selecionada"
             >
               Responder

@@ -66,7 +66,7 @@ export class SyncService {
     }
   }
 
-  // Sincronizar respostas pendentes
+  // Sincronizar respostas pendentes (com UPSERT para evitar duplicatas)
   static async syncAnswers(): Promise<void> {
     try {
       const queue = await LocalStorageService.getSyncQueue()
@@ -109,7 +109,7 @@ export class SyncService {
         return
       }
 
-      // Tentar sincronizar itens válidos
+      // Tentar sincronizar itens válidos com UPSERT (sobrescreve duplicatas)
       const answersToSync = sanitizedItems.map(item => ({
         id_sessao: item.sessionId,
         id_questao: item.data.id_questao,
@@ -120,7 +120,9 @@ export class SyncService {
 
       const { error } = await supabase
         .from('respostas_alunos')
-        .insert(answersToSync)
+        .upsert(answersToSync, {
+          onConflict: 'id_sessao,id_questao' // Constraint UNIQUE do banco
+        })
 
       // TRATAMENTO RESILIENTE: Não quebrar o fluxo em caso de erro
       if (error) {
@@ -133,7 +135,7 @@ export class SyncService {
         return
       }
 
-      console.log('Respostas sincronizadas com sucesso!')
+      console.log('Respostas sincronizadas/atualizadas com sucesso!')
       
       // Limpar apenas itens sincronizados com sucesso
       const syncedItemIds = new Set(sanitizedItems.map(item => item.timestamp))
